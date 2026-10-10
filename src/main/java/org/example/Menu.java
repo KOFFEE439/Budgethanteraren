@@ -3,7 +3,9 @@ package org.example;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Menu {
 
@@ -31,6 +33,9 @@ public class Menu {
                 case "2":
                     showTransactions();
                     break;
+                case "3":
+                    showSummary();
+                    break;
                 case "6":
                     menu = false;
                     IO.println("\n" + "VÄLKOMMEN TILLBAKA! ");
@@ -56,19 +61,18 @@ public class Menu {
                 return;
             }
 
-            Transaction transaction =
-                    new Transaction(LocalDate.now(), category, amount, type);
+            Transaction transaction = new Transaction(LocalDate.now(), category, amount, type);
 
             transactions.add(transaction);
             IO.println("Transaktionen har lagts till.");
         } catch (IllegalArgumentException e) {
-            IO.println("Ogiltigt belopp eller typ. Försök igen.");
+            IO.println("Ogiltigt belopp eller typ. Försök igen. ");
         }
     }
 
     private void showTransactions() {
         if (transactions.isEmpty()) {
-            IO.println("Det finns inga transaktioner ännu.");
+            IO.println("Det finns inga transaktioner ännu. ");
             return;
         }
 
@@ -77,4 +81,50 @@ public class Menu {
         }
 
     }
-}
+
+        private BigDecimal calculateBalance() {
+            BigDecimal balance = BigDecimal.ZERO;
+
+            for (Transaction transaction : transactions) {
+                if (transaction.transactionType() == TransactionType.INKOMST) {
+                    balance = balance.add(transaction.totalSum());
+                } else {
+                    balance = balance.subtract(transaction.totalSum());
+                }
+            }
+
+            return balance;
+        }
+
+    private Map<String, BigDecimal> calculateExpensesByCategory() {
+        Map<String, BigDecimal> totals = new HashMap<>();
+
+        for (Transaction transaction : transactions) {
+            if (transaction.transactionType() == TransactionType.UTGIFT) {
+                totals.merge(
+                        transaction.category(),
+                        transaction.totalSum(),
+                        BigDecimal::add
+                );
+            }
+        }
+
+        return totals;
+    }
+    private void showSummary() {
+        IO.println("Saldo: " + calculateBalance());
+        IO.println("Utgifter per kategori:");
+
+        Map<String, BigDecimal> totals = calculateExpensesByCategory();
+
+        if (totals.isEmpty()) {
+            IO.println("Inga utgifter att sammanställa.");
+            return;
+        }
+
+        totals.forEach((category, total) ->
+                IO.println(category + ": " + total)
+        );
+    }
+    }
+
