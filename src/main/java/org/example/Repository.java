@@ -16,9 +16,8 @@ public class Repository<T> {
     }
 
     public List<T> findWhere(Predicate<T> condition) {
-        return items.stream()
-                .filter(condition)
-                .toList();
+        return items.stream().filter(condition).toList();
+
     }
 
 }

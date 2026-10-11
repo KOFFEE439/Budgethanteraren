@@ -8,6 +8,7 @@ import java.util.Map;
 public class Menu {
 
     private final Repository<Transaction> transactions = new Repository<>();
+    private final BudgetCalculator calculator = new BudgetCalculator();
 
     public void showMenu() {
         boolean menu = true;
@@ -21,7 +22,7 @@ public class Menu {
             IO.println("3. Visa saldo och sammanställning per kategori");
             IO.println("4. Filtrera transaktioner");
             IO.println("5. Spara till fil");
-            IO.println("6. Avsluta);");
+            IO.println("6. Avsluta ");
 
             String choice = IO.readln("Välj ett alternativ : ");
             switch (choice) {
@@ -50,73 +51,50 @@ public class Menu {
 
     public void createTransaction() {
         String category = IO.readln("Vad är det för kategori för transaktionen? ");
-        String typeOfAmount = IO.readln("Vad är det för kategori av belopp (INKOMST/UTGIFT)");
-        String amountNumber = IO.readln("Vad är det för belopp ");
+        String typeOfAmount =
+                IO.readln("Vad är det för typ av transaktion (INKOMST/UTGIFT)? ");
+        String amountNumber = IO.readln("Vad är beloppet? ");
 
         try {
             BigDecimal amount = new BigDecimal(amountNumber);
-            TransactionType type = TransactionType.valueOf(typeOfAmount.trim().toUpperCase());
+            TransactionType type =
+                    TransactionType.valueOf(typeOfAmount.trim().toUpperCase());
 
             if (amount.signum() <= 0) {
-                IO.println("Beloppet måste vara större än noll.");
-                return;
+                throw new InvalidTransactionException(
+                        "Beloppet måste vara större än noll."
+                );
             }
 
-            Transaction transaction = new Transaction(LocalDate.now(), category, amount, type);
+            Transaction transaction =
+                    new Transaction(LocalDate.now(), category, amount, type);
 
             transactions.add(transaction);
             IO.println("Transaktionen har lagts till.");
-        } catch (IllegalArgumentException e) {
-            IO.println("Ogiltigt belopp eller typ. Försök igen. ");
+        } catch (InvalidTransactionException | IllegalArgumentException e) {
+            IO.println(e.getMessage());
         }
     }
 
     private void showTransactions() {
         if (transactions.findAll().isEmpty()) {
-            IO.println("Det finns inga transaktioner ännu ");
+            IO.println("Det finns inga transaktioner ännu.");
             return;
         }
 
         for (Transaction transaction : transactions.findAll()) {
             IO.println(transaction);
         }
-
     }
 
-        private BigDecimal calculateBalance() {
-            BigDecimal balance = BigDecimal.ZERO;
-
-            for (Transaction transaction : transactions.findAll()) {
-                if (transaction.transactionType() == TransactionType.INKOMST) {
-                    balance = balance.add(transaction.totalSum());
-                } else {
-                    balance = balance.subtract(transaction.totalSum());
-                }
-            }
-
-            return balance;
-        }
-
-    private Map<String, BigDecimal> calculateExpensesByCategory() {
-        Map<String, BigDecimal> totals = new HashMap<>();
-
-        for (Transaction transaction : transactions.findAll()) {
-            if (transaction.transactionType() == TransactionType.UTGIFT) {
-                totals.merge(
-                        transaction.category(),
-                        transaction.totalSum(),
-                        BigDecimal::add
-                );
-            }
-        }
-
-        return totals;
-    }
     private void showSummary() {
-        IO.println("Saldo: " + calculateBalance());
+        var allTransactions = transactions.findAll();
+
+        IO.println("Saldo: " + calculator.calculateBalance(allTransactions));
         IO.println("Utgifter per kategori:");
 
-        Map<String, BigDecimal> totals = calculateExpensesByCategory();
+        Map<String, BigDecimal> totals =
+                calculator.calculateExpensesByCategory(allTransactions);
 
         if (totals.isEmpty()) {
             IO.println("Inga utgifter att sammanställa.");
@@ -129,7 +107,8 @@ public class Menu {
     }
 
     private void filterTransactionsByCategory() {
-        String categoryToFind = IO.readln("Vilken kategori vill du visa? ").trim();
+        String categoryToFind =
+                IO.readln("Vilken kategori vill du visa? ").trim();
 
         boolean found = false;
 
@@ -143,6 +122,7 @@ public class Menu {
             IO.println("Hittade inga transaktioner i den kategorin.");
         }
     }
+}
 
-    }
+
 
