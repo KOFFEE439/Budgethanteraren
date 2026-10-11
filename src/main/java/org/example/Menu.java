@@ -2,14 +2,12 @@ package org.example;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class Menu {
 
-    private final List<Transaction> transactions = new ArrayList<>();
+    private final Repository<Transaction> transactions = new Repository<>();
 
     public void showMenu() {
         boolean menu = true;
@@ -35,6 +33,9 @@ public class Menu {
                     break;
                 case "3":
                     showSummary();
+                    break;
+                case "4":
+                    filterTransactionsByCategory();
                     break;
                 case "6":
                     menu = false;
@@ -71,12 +72,12 @@ public class Menu {
     }
 
     private void showTransactions() {
-        if (transactions.isEmpty()) {
-            IO.println("Det finns inga transaktioner ännu. ");
+        if (transactions.findAll().isEmpty()) {
+            IO.println("Det finns inga transaktioner ännu ");
             return;
         }
 
-        for (Transaction transaction : transactions) {
+        for (Transaction transaction : transactions.findAll()) {
             IO.println(transaction);
         }
 
@@ -85,7 +86,7 @@ public class Menu {
         private BigDecimal calculateBalance() {
             BigDecimal balance = BigDecimal.ZERO;
 
-            for (Transaction transaction : transactions) {
+            for (Transaction transaction : transactions.findAll()) {
                 if (transaction.transactionType() == TransactionType.INKOMST) {
                     balance = balance.add(transaction.totalSum());
                 } else {
@@ -99,7 +100,7 @@ public class Menu {
     private Map<String, BigDecimal> calculateExpensesByCategory() {
         Map<String, BigDecimal> totals = new HashMap<>();
 
-        for (Transaction transaction : transactions) {
+        for (Transaction transaction : transactions.findAll()) {
             if (transaction.transactionType() == TransactionType.UTGIFT) {
                 totals.merge(
                         transaction.category(),
@@ -126,5 +127,22 @@ public class Menu {
                 IO.println(category + ": " + total)
         );
     }
+
+    private void filterTransactionsByCategory() {
+        String categoryToFind = IO.readln("Vilken kategori vill du visa? ").trim();
+
+        boolean found = false;
+
+        for (Transaction transaction : transactions.findWhere(
+                t -> t.category().equalsIgnoreCase(categoryToFind))) {
+            IO.println(transaction);
+            found = true;
+        }
+
+        if (!found) {
+            IO.println("Hittade inga transaktioner i den kategorin.");
+        }
+    }
+
     }
 
