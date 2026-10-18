@@ -46,6 +46,25 @@ class RepositoryTest {
 
     }
 
+    @Test
+    void findWhereReturnsNothingInListWhenNothingMatches() {
+        Repository<Integer> repository = new Repository<>();
+        repository.add(1);
+        repository.add(3);
 
+        List<Integer> result = repository.findWhere(number -> number % 2 == 0);
+        assertTrue(result.isEmpty());
+    }
 
+    @Test
+    void findWhereWhenReturningMatchingItems() {
+        Repository<Integer> repository = new Repository<>();
+        repository.add(1);
+        repository.add(2);
+        repository.add(3);
+
+        List<Integer> result = repository.findWhere(number -> number % 2 == 0);
+        assertEquals(List.of(2), result);
+    }
 }
+
