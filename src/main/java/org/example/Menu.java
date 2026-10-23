@@ -2,15 +2,21 @@ package org.example;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.Map;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Menu {
 
     private final Repository<Transaction> transactions = new Repository<>();
     private final BudgetCalculator calculator = new BudgetCalculator();
+    private final TransactionFileService fileService = new TransactionFileService(Path.of("data", "transactions.txt"));
+    private static final Logger LOGGER = Logger.getLogger(Menu.class.getName());
 
     public void showMenu() {
+        loadTransactions();
         boolean menu = true;
 
         while (menu) {
@@ -38,9 +44,13 @@ public class Menu {
                 case "4":
                     filterTransactionsByCategory();
                     break;
+                case "5":
+                    saveTransactions();
+                    break;
                 case "6":
+                    saveTransactions();
                     menu = false;
-                    IO.println("\n" + "VÄLKOMMEN TILLBAKA! ");
+                    IO.println("\nVÄLKOMMEN TILLBAKA!");
                     break;
                 default:
                     IO.println("\n" + "Ogiltigt val, vänligen välj en siffra mellan 1 och 6." + "\n");
@@ -72,6 +82,7 @@ public class Menu {
             transactions.add(transaction);
             IO.println("Transaktionen har lagts till.");
         } catch (InvalidTransactionException | IllegalArgumentException e) {
+            LOGGER.log(Level.WARNING, "Ogiltig transaktionsindata: {0}", e.getMessage());
             IO.println(e.getMessage());
         }
     }
@@ -120,6 +131,26 @@ public class Menu {
 
         if (!found) {
             IO.println("Hittade inga transaktioner i den kategorin.");
+        }
+    }
+
+    private void loadTransactions() {
+        try {
+            for (Transaction transaction : fileService.load()) {
+                transactions.add(transaction);
+            }
+        } catch (IOException e) {
+            IO.println("Kunde inte läsa transaktionsfilen.");
+            LOGGER.log(Level.SEVERE, "Fel vid inläsning av transaktionsfilen.", e);
+        }
+    }
+    private void saveTransactions() {
+        try {
+            fileService.save(transactions.findAll());
+            IO.println("Transaktionerna har sparats.");
+        } catch (IOException | FileFormatException e) {
+            IO.println("Kunde inte spara transaktionerna.");
+            LOGGER.log(Level.SEVERE, "Fel vid sparning av transaktionsfilen.", e);
         }
     }
 }
