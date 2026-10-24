@@ -60,7 +60,7 @@ public class Menu {
     }
 
     public void createTransaction() {
-        String category = IO.readln("Vad är det för kategori för transaktionen? ");
+        String category = IO.readln("Vad är det för kategori för transaktionen? ").trim();
         String typeOfAmount =
                 IO.readln("Vad är det för typ av transaktion (INKOMST/UTGIFT)? ");
         String amountNumber = IO.readln("Vad är beloppet? ");
@@ -74,6 +74,10 @@ public class Menu {
                 throw new InvalidTransactionException(
                         "Beloppet måste vara större än noll."
                 );
+            }
+
+            if (category.isBlank()) {
+                throw new InvalidTransactionException("Kategorin får inte vara tom.");
             }
 
             Transaction transaction =
